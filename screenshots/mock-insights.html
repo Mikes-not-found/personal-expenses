@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400">
+<title>Personal Expenses – Insights</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+  :root{--bg-base:#0a0e14;--bg-surface:#111820;--bg-elevated:#1a2230;--bg-interactive:#253040;--accent:#4fc3f7;--c-green:#66bb6a;--c-red:#ef5350;--c-amber:#ffca28;--text-primary:#e3e8ef;--text-secondary:#8899aa;--text-muted:#556677;--border:rgba(255,255,255,0.07);--mono:'JetBrains Mono',monospace;--sans:'Inter',system-ui,sans-serif;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--sans);background:var(--bg-base);color:var(--text-primary);width:1400px;min-height:860px;padding:24px 36px;display:flex;flex-direction:column;gap:14px;}
+  .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:.05;}
+  .content{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;flex:1;}
+  .tabs{display:flex;gap:4px;background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;padding:5px;width:fit-content;}
+  .tab{padding:10px 22px;border-radius:10px;font-size:13px;font-weight:500;color:var(--text-muted);display:flex;gap:7px;align-items:center;}
+  .tab.active{background:linear-gradient(135deg,#4fc3f7,#81d4fa);color:#0a0e14;font-weight:700;box-shadow:0 2px 12px rgba(79,195,247,0.3);}
+  .filter-bar{background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;}
+  .filter-label{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  .filter-sel{background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text-primary);font-family:var(--sans);}
+  .filter-info{margin-left:auto;font-size:11px;color:var(--text-muted);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;}
+  .card{background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+  .card.full{grid-column:1/-1;}
+  .card-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .card-title{font-size:13px;font-weight:700;color:var(--text-primary);}
+  .card-sub{font-size:10px;color:var(--text-muted);}
+  .card-body{padding:14px 18px;flex:1;}
+  .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .heat-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);}
+  .heat-legend{margin-top:10px;display:flex;align-items:center;gap:6px;justify-content:center;}
+  .heat-bar{height:8px;width:80px;border-radius:4px;background:linear-gradient(90deg,var(--bg-interactive),rgba(79,195,247,0.9));}
+  .donut-wrap{display:flex;align-items:flex-start;gap:20px;}
+  .legend-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+  .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+  .legend-name{font-size:11px;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .legend-pct{font-size:10px;color:var(--text-muted);font-family:var(--mono);}
+  .ticket-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+  .t-rank{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;}
+  .t-cat{flex:1;font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-avg{width:72px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--text-primary);font-weight:600;flex-shrink:0;}
+  .t-n{width:44px;text-align:right;font-size:10px;color:var(--text-muted);flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="blob" style="width:500px;height:500px;top:-100px;left:50%;background:radial-gradient(circle,#4fc3f7,transparent 70%);"></div>
+<div class="blob" style="width:350px;height:350px;bottom:-60px;left:-80px;background:radial-gradient(circle,#66bb6a,transparent 70%);"></div>
+
+<div class="content">
+  <div class="tabs">
+    <div class="tab"><span>📊</span> Panoramica</div>
+    <div class="tab"><span>📈</span> Previsioni</div>
+    <div class="tab active"><span>🔬</span> Insights</div>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Filtra mese</span>
+    <select class="filter-sel"><option>Tutti i mesi</option></select>
+    <span class="filter-info">Dati annuali completi</span>
+  </div>
+  <div class="grid">
+    <!-- Bar chart full width -->
+    <div class="card full">
+      <div class="card-head"><span class="card-title">📊 Spesa mensile</span><span class="card-sub">barra = totale · linea tratteggiata = media</span></div>
+      <div class="card-body" style="padding-bottom:6px;">
+        <svg id="barchart" width="100%" viewBox="0 0 1260 125" style="overflow:visible;display:block;"></svg>
+      </div>
+    </div>
+    <!-- Donut -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">🍩 Categorie</span><span class="card-sub">· anno intero</span></div>
+      <div class="card-body donut-wrap">
+        <svg id="donut" width="150" height="150" style="flex-shrink:0;"></svg>
+        <div id="legend" style="flex:1;padding-top:4px;"></div>
+      </div>
+    </div>
+    <!-- Heatmap -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">🗓️ Giorni caldi</span><span class="card-sub">· anno intero</span></div>
+      <div class="card-body">
+        <div id="heatmap" class="heatmap"></div>
+        <div class="heat-legend">
+          <div class="heat-bar"></div>
+          <span style="font-size:9px;color:var(--text-muted);">meno → più spesa</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Bar chart ──────────────────────────────────────────────────────────────
+(function() {
+  const data = [591.16,818.74,0,0,0,0,0,0,0,0,0,0];
+  const labels = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const maxV = 900, H = 95, avg = 704.95;
+  const BW = 60, VW = 1240;
+  const gap = (VW - data.length * BW) / (data.length + 1);
+  let svg = '';
+
+  // avg line
+  const avgY = H - (avg / maxV) * H;
+  svg += `<line x1="10" x2="1250" y1="${avgY.toFixed(1)}" y2="${avgY.toFixed(1)}" stroke="rgba(255,202,40,0.45)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  svg += `<text x="1255" y="${(avgY+4).toFixed(1)}" font-size="9" fill="#ffca28" font-family="JetBrains Mono,monospace">avg</text>`;
+
+  data.forEach((v, i) => {
+    const x = 10 + gap + i * (BW + gap);
+    const barH = v > 0 ? Math.max(3, (v / maxV) * H) : 0;
+    const y = H - barH;
+    const fill = v > avg ? 'rgba(255,202,40,0.7)' : 'rgba(79,195,247,0.55)';
+    const labelFill = v > 0 ? (v > avg ? '#ffca28' : '#556677') : '#334455';
+    if (v > 0) {
+      svg += `<text x="${(x+BW/2).toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="9" fill="${labelFill}" font-family="JetBrains Mono,monospace">${Math.round(v)}</text>`;
+      svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${BW}" height="${barH.toFixed(1)}" rx="5" fill="${fill}"/>`;
+    }
+    const monthFill = v > 0 ? '#8899aa' : '#334455';
+    svg += `<text x="${(x+BW/2).toFixed(1)}" y="115" text-anchor="middle" font-size="11" fill="${monthFill}" font-family="Inter,sans-serif">${labels[i]}</text>`;
+  });
+
+  document.getElementById('barchart').innerHTML = svg;
+})();
+
+// ── Donut chart ────────────────────────────────────────────────────────────
+(function() {
+  const cats = [
+    ['Transport',447.65,'#4fc3f7'],['Out',343.99,'#66bb6a'],
+    ['Leisure',213.78,'#ffca28'],['Health',158.00,'#ef5350'],
+    ['Travel',106.00,'#ab47bc'],['Gifts',69.90,'#26c6da'],
+    ['Clothing',38.18,'#ff7043'],['OtherExp',23.00,'#8d6e63'],
+    ['Groceries',9.40,'#42a5f5']
+  ];
+  const total = cats.reduce((s,[,v])=>s+v,0);
+  const R=60,IR=34,CX=75,CY=75;
+  let cumAngle = -Math.PI/2;
+  let svgPaths = '';
+  let legendHtml = '';
+
+  cats.forEach(([name,val,col]) => {
+    const pct = val/total;
+    const sweep = pct * 2 * Math.PI;
+    const end = cumAngle + sweep;
+    const x1=CX+R*Math.cos(cumAngle), y1=CY+R*Math.sin(cumAngle);
+    const x2=CX+R*Math.cos(end),     y2=CY+R*Math.sin(end);
+    const xi1=CX+IR*Math.cos(cumAngle), yi1=CY+IR*Math.sin(cumAngle);
+    const xi2=CX+IR*Math.cos(end),      yi2=CY+IR*Math.sin(end);
+    const la = sweep > Math.PI ? 1 : 0;
+    svgPaths += `<path d="M${xi1.toFixed(2)} ${yi1.toFixed(2)} L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${la} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L${xi2.toFixed(2)} ${yi2.toFixed(2)} A${IR} ${IR} 0 ${la} 0 ${xi1.toFixed(2)} ${yi1.toFixed(2)}Z" fill="${col}" opacity="0.85"/>`;
+    legendHtml += `<div class="legend-row"><div class="legend-dot" style="background:${col}"></div><span class="legend-name">${name}</span><span class="legend-pct">${(pct*100).toFixed(1)}%</span></div>`;
+    cumAngle = end;
+  });
+
+  svgPaths += `<text x="75" y="71" text-anchor="middle" font-size="9" fill="#556677" font-family="Inter,sans-serif">totale</text>`;
+  svgPaths += `<text x="75" y="85" text-anchor="middle" font-size="13" font-weight="700" fill="#e3e8ef" font-family="JetBrains Mono,monospace">1.409€</text>`;
+
+  document.getElementById('donut').innerHTML = svgPaths;
+  document.getElementById('legend').innerHTML = legendHtml;
+})();
+
+// ── Heatmap ────────────────────────────────────────────────────────────────
+(function() {
+  const intensities = [0.2,0.9,0.1,0.4,0.7,0.3,0.15,0.85,0.2,0.5,0.3,0.1,0.6,0.4,0.25,0.8,0.35,0.15,0.45,0.7,0.1,0.3,0.5,0.2,0.95,0.3,0.15,0.6,0.4,0.2,0.1];
+  const hm = document.getElementById('heatmap');
+  intensities.forEach((int, i) => {
+    const bg = int < 0.05 ? 'var(--bg-interactive)' : `rgba(79,195,247,${(0.12+int*0.75).toFixed(2)})`;
+    const tc = int > 0.55 ? 'var(--bg-base)' : 'var(--text-muted)';
+    const fw = int > 0.3 ? '700' : '400';
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    cell.style.cssText = `background:${bg};color:${tc};font-weight:${fw};`;
+    cell.textContent = i+1;
+    hm.appendChild(cell);
+  });
+})();
+</script>
+</body>
+</html>

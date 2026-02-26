@@ -1,0 +1,22 @@
+{
+  "name": "personal-expenses-video",
+  "version": "1.0.0",
+  "description": "Remotion video demo for Personal Expenses app",
+  "type": "module",
+  "scripts": {
+    "start": "npx remotion studio",
+    "render": "npx remotion render AppDemo out/demo.mp4",
+    "screenshot": "npx remotion still AppDemo --frame=30 out/screenshot-overview.png && npx remotion still AppDemo --frame=120 out/screenshot-predictions.png && npx remotion still AppDemo --frame=220 out/screenshot-insights.png"
+  },
+  "dependencies": {
+    "remotion": "^4.0.290",
+    "@remotion/cli": "^4.0.290",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.0"
+  }
+}
