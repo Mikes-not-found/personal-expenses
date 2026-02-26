@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "vite build && electron-builder",
+    "electron:build": "npm install --include=dev && vite build && electron-builder",
     "lint": "eslint .",
     "package": "electron-packager . your-app-name --platform=win32 --arch=x64 --out=dist --overwrite"
   },
@@ -24,8 +24,7 @@
       "electron/**/*.cjs"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "public/icon.png"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": true,
